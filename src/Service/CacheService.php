@@ -23,7 +23,7 @@ class CacheService
     {
         $data = $this->getData($key, $tags);
 
-        if (null === $data && null !== $callback) {
+        if (false === $data && null !== $callback) {
             $data = \call_user_func_array($callback, $paramArr);
             $status = $this->setData($key, $data, $expirationTime, $tags);
             //TODO: log on dev or not?
@@ -37,7 +37,8 @@ class CacheService
         $cacheKey = $this->generateCacheKey($key, $tags);
         $data = $this->cacheData->get($cacheKey);
 
-        return json_decode($data, true);
+        //TODO: use Symfony Serialize @ver:1
+        return unserialize($data);
     }
 
     public function setData($key, $data, ?int $expirationTime = null, array $tags = [])
@@ -52,7 +53,8 @@ class CacheService
             ];
         }
 
-        $data = json_encode($data);
+        //TODO: use Symfony Serialize @ver:1
+        $data = serialize($data);
 
         return $this->cacheData->set($cacheKey, $data, ...$moreParams);
     }
@@ -79,12 +81,25 @@ class CacheService
         }
     }
 
+    public function getAndSetCounter($key, array $tags, $count): int
+    {
+        $currentCount = $this->getCounter($key, $tags);
+
+        if (false === $currentCount && null !== $count) {
+            $this->setCounter($key, $count, null, $tags);
+            $currentCount = $count;
+        }
+
+        return (int) $currentCount;
+    }
+
     public function getCounter($key, array $tags = [])
     {
         $cacheKey = $this->generateCacheKey($key, $tags);
         $data = $this->cacheCounter->get($cacheKey);
 
-        return json_decode($data, true);
+        //TODO: use Symfony Serialize @ver:1
+        return unserialize($data);
     }
 
     public function setCounter($key, $data, ?int $expirationTime = null, array $tags = [])
@@ -98,8 +113,8 @@ class CacheService
                 $expirationTime,
             ];
         }
-
-        $data = json_encode($data);
+        //TODO: use Symfony Serialize @ver:1
+        $data = serialize($data);
 
         return $this->cacheCounter->set($cacheKey, $data, ...$moreParams);
     }
